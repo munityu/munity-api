@@ -102,11 +102,11 @@ class UserController extends Controller
             $user = User::find($this->user->id);
             $uimage = substr($user->image, 46);
 
-            if (\Illuminate\Support\Facades\Storage::disk('s3')->exists('weevely/' . $uimage) && !str_contains($uimage, 'weevely_H265P'))
-                \Illuminate\Support\Facades\Storage::disk('s3')->delete('weevely/' . $uimage);
+            if (\Illuminate\Support\Facades\Storage::disk('s3')->exists('uevent/' . $uimage) && !str_contains($uimage, 'uevent_H265P'))
+                \Illuminate\Support\Facades\Storage::disk('s3')->delete('uevent/' . $uimage);
 
             $user->update([
-                'image' => $image = "https://d3djy7pad2souj.cloudfront.net/weevely/" . explode('/', $request->file('image')->storeAs('weevely', $user->id . $request->file('image')->getClientOriginalName(), 's3'))[1]
+                'image' => $image = "https://d3djy7pad2souj.cloudfront.net/uevent/" . explode('/', $request->file('image')->storeAs('uevent', $user->id . $request->file('image')->getClientOriginalName(), 's3'))[1]
             ]);
 
             return response([

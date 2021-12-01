@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserController;
 
@@ -21,5 +23,17 @@ Route::group(['prefix' => 'auth'], function () {
 Route::group(['prefix' => 'users', 'middleware' => 'auth'], function () {
     Route::patch('/me', [UserController::class, 'updateMe']);
     Route::post('/me/avatar', [UserController::class, 'uploadAvatar']);
+
+    Route::apiResource(UserController::class);
 });
-Route::apiResource('users', UserController::class);
+
+Route::group(['prefix' => 'events'], function () {
+    Route::patch('/subscribe', [EventController::class, 'subscribe']);
+    Route::post('/comments', [EventController::class, 'createComment']);
+
+    Route::apiResource(EventController::class);
+});
+
+Route::group(['prefix' => 'comments'], function () {
+    Route::apiResource(CommentController::class);
+});
