@@ -9,7 +9,7 @@ class CreateEventUserTable extends \Illuminate\Database\Migrations\Migration
         Schema::create('event_user', function (\Illuminate\Database\Schema\Blueprint $table) {
             $table->foreignId('event_id')->constrained();
             $table->foreignId('user_id')->constrained();
-            $table->boolean('owner')->default(false);
+            $table->boolean('organizer')->default(false);
         });
     }
 
