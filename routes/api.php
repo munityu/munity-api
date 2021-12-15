@@ -16,19 +16,22 @@ Route::group(['prefix' => 'auth'], function () {
     Route::group(['middleware' => 'auth'], function () {
         Route::post('/signout', [AuthController::class, 'signOut']);
         Route::get('/refresh', [AuthController::class, 'refreshToken']);
-        Route::get('/me', [AuthController::class, 'me']);
     });
 });
 
 Route::group(['prefix' => 'users', 'middleware' => 'auth'], function () {
+    Route::get('/me', [UserController::class, 'me']);
     Route::patch('/me', [UserController::class, 'updateMe']);
     Route::post('/me/avatar', [UserController::class, 'uploadAvatar']);
 });
 Route::apiResource('users', UserController::class);
 
 Route::group(['prefix' => 'events'], function () {
-    Route::patch('/subscribe', [EventController::class, 'subscribe']);
-    Route::post('/comments', [EventController::class, 'createComment']);
+    Route::get('/{id}/comments', [EventController::class, 'getComments']);
+    Route::get('/{id}/notifications', [EventController::class, 'getNotifications']);
+    Route::post('/{id}/subscribe', [EventController::class, 'subscribe']);
+    Route::post('/{id}/comments', [EventController::class, 'createComment']);
+    Route::post('/{id}/notifications', [EventController::class, 'createNotification']);
 });
 Route::apiResource('events', EventController::class);
 

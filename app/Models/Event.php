@@ -2,42 +2,68 @@
 
 namespace App\Models;
 
-class Event extends \Illuminate\Database\Eloquent\Model
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Event extends Model
 {
-    use \Illuminate\Database\Eloquent\Factories\HasFactory, \Illuminate\Notifications\Notifiable;
+    use HasFactory;
 
     protected $fillable = [
-        'name',
+        'title',
         'description',
-        'price',
-        'date',
-        'address',
+        'poster',
         'format',
         'theme',
+        'date',
+        'price',
+        'location',
+        'nv_notifications',
+        'public_visitors',
+        'promocode',
+        'page',
     ];
 
     protected $casts = [
-        'name' => 'string',
+        'title' => 'string',
         'description' => 'string',
-        'price' => 'float',
-        'date' => 'datetime',
-        'address' => 'string',
+        'poster' => 'string',
         'format' => 'string',
         'theme' => 'string',
+        'date' => 'datetime',
+        'price' => 'float',
+        'location' => 'string',
+        'nv_notifications' => 'bool',
+        'public_visitors' => 'bool',
+        'promocode' => 'string',
+        'page' => 'string',
     ];
 
     public function members()
     {
-        return $this->belongsToMany(User::class)->withPivot(['owner'])->as('calendar_user');
+        return $this->belongsToMany(User::class)->withPivot(['organizer'])->as('event_user');
     }
 
-    public function owner()
+    public function isMember(int $id): bool
     {
-        return $this->belongsToMany(Event::class)->withPivot(['owner'])->wherePivot('owner', true)->as('event_user');
+        foreach ($this->members as $member)
+            if ($member->id == $id)
+                return true;
+        return false;
+    }
+
+    public function organizer()
+    {
+        return $this->belongsToMany(User::class)->withPivot(['organizer'])->wherePivot('organizer', true)->as('event_user');
     }
 
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 }

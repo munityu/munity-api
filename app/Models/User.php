@@ -2,16 +2,22 @@
 
 namespace App\Models;
 
-class User extends \Illuminate\Foundation\Auth\User implements \Tymon\JWTAuth\Contracts\JWTSubject
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
+
+class User extends Authenticatable implements JWTSubject
 {
-    use \Illuminate\Database\Eloquent\Factories\HasFactory, \Illuminate\Notifications\Notifiable;
+    use HasFactory;
 
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
         'image',
+        'location',
+        'role',
     ];
 
     protected $hidden = [
@@ -22,23 +28,24 @@ class User extends \Illuminate\Foundation\Auth\User implements \Tymon\JWTAuth\Co
         'name' => 'string',
         'email' => 'string',
         'password' => 'string',
-        'role' => 'string',
         'image' => 'string',
+        'location' => 'string',
+        'role' => 'string',
     ];
 
     public function events()
     {
-        return $this->belongsToMany(Event::class)->withPivot(['owner'])->as('event_user');
+        return $this->belongsToMany(Event::class)->withPivot(['organizer'])->as('event_user');
     }
 
-    public function owner()
+    public function organizer()
     {
-        return $this->belongsToMany(Event::class)->withPivot(['owner'])->wherePivot('owner', true)->as('event_user');
+        return $this->belongsToMany(Event::class)->withPivot(['organizer'])->wherePivot('organizer', true)->as('event_user');
     }
 
     public function members()
     {
-        return $this->belongsToMany(Event::class)->withPivot(['owner'])->wherePivot('owner', false)->as('event_user');
+        return $this->belongsToMany(Event::class)->withPivot(['organizer'])->wherePivot('organizer', false)->as('event_user');
     }
 
     public function comments()
