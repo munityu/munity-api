@@ -5,18 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Requests\UploadAvatarRequest;
-use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 
 class UserController extends Controller
 {
-    private $error_404 = [['message' => 'User does not exist'], 404];
-    private $error_403 = [['message' => 'Permission denied'], 403];
+    private $error404 = [['message' => 'User does not exist'], 404];
+    private $error403 = [['message' => 'Permission denied'], 403];
 
     public function __construct()
     {
-        $this->user = auth()->user();
+        $this->user = JWTAuth::user(JWTAuth::getToken());
         $this->admin = $this->user->role == 'admin';
     }
 
@@ -34,47 +33,60 @@ class UserController extends Controller
     {
         $user = is_numeric($id) ? User::find($id) : User::where('name', $id)->first();
         if (!$user)
-            return response(...$this->error_404);
+            return response(...$this->error404);
+
         return $user;
     }
 
     public function me()
     {
-        $data = $this->user;
-        // FIXME Array to string conversion exception
-        $data->location = unpack('x/x/x/x/corder/Ltype/dlat/dlon', $data->location);
-        return $data;
+        if (!$user = User::find($this->user->id))
+            return response(...$this->error404);
+
+        if (!$user->location)
+            unset($user->location);
+        else {
+            $user->location = [
+                $user->location->getLat(),
+                $user->location->getLng()
+            ];
+        }
+        return $user;
     }
 
     public function update(UpdateUserRequest $request, int $id)
     {
         if (!$user = User::find($id))
-            return response(...$this->error_404);
+            return response(...$this->error404);
+
         if (!$this->admin && $this->user->id != $user->id)
             return response(...$this->error_403);
+
         $data = $request->all();
-        if (isset($data['location']) && $location = $data['location'])
-            $data['location'] = User::raw("ST_GeomFromText('POINT($location)')");
+        if ($data['location']) {
+            $data['location'] = new \Grimzy\LaravelMysqlSpatial\Types\Point($data['location'][0], $data['location'][1]);
+        }
+
         return $user->update($data);
     }
 
     public function destroy(int $id)
     {
         if (!$user = User::find($id))
-            return response(...$this->error_404);
+            return response(...$this->error404);
+
         if (!$this->admin && $this->user->id != $user->id)
-            return response(...$this->error_403);
+            return response(...$this->error403);
+
         return $user->delete($id);
     }
 
     public function updateMe(UpdateUserRequest $request)
     {
-        if (!$user = $this->user->id)
-            return response(...$this->error_404);
-        $data = $request->all();
-        if (isset($data['location']) && $location = $data['location'])
-            $data['location'] = User::raw("ST_GeomFromText('POINT($location)')");
-        $user->update($data);
+        if (!$user = User::find($this->user->id))
+            return response(...$this->error404);
+
+        $user->update($request->all());
         return response([
             "message" => "Successfully updated.",
             'cookie' => json_encode([
@@ -97,15 +109,15 @@ class UserController extends Controller
     public function uploadAvatar(UploadAvatarRequest $request)
     {
         if ($request->file('image')) {
-            $user = $this->user->id;
+            $user = User::find($this->user->id);
             $uimage = substr($user->image, 46);
 
-            if (Storage::disk('s3')->exists('uevent/' . $uimage) && !str_contains($uimage, 'uevent_H265P'))
-                Storage::disk('s3')->delete('uevent/' . $uimage);
+            if (\Illuminate\Support\Facades\Storage::disk('s3')->exists('weevely/' . $uimage) && !str_contains($uimage, 'weevely_H265P'))
+                \Illuminate\Support\Facades\Storage::disk('s3')->delete('weevely/' . $uimage);
 
             $user->update([
-                'image' => $image = "https://d3djy7pad2souj.cloudfront.net/uevent/" .
-                    explode('/', $request->file('image')->storeAs('uevent', $user->id .
+                'image' => $image = "https://d3djy7pad2souj.cloudfront.net/weevely/" .
+                    explode('/', $request->file('image')->storeAs('weevely', $user->id .
                         $request->file('image')->getClientOriginalName(), 's3'))[1]
             ]);
 

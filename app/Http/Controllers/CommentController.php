@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CommentController extends Controller
 {
@@ -12,7 +13,7 @@ class CommentController extends Controller
 
     public function __construct()
     {
-        $this->user = auth()->user();
+        $this->user = JWTAuth::user(JWTAuth::getToken());
         $this->admin = $this->user->role == 'admin';
     }
 

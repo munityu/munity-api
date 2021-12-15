@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
-
-class User extends Authenticatable implements JWTSubject
+class User extends \Illuminate\Foundation\Auth\User implements \Tymon\JWTAuth\Contracts\JWTSubject
 {
-    use HasFactory;
+    use \Illuminate\Database\Eloquent\Factories\HasFactory;
+    use SpatialTrait;
 
     protected $fillable = [
         'name',
@@ -24,12 +22,15 @@ class User extends Authenticatable implements JWTSubject
         'password'
     ];
 
+    protected $spatialFields = [
+        'location',
+    ];
+
     protected $casts = [
         'name' => 'string',
         'email' => 'string',
         'password' => 'string',
         'image' => 'string',
-        'location' => 'string',
         'role' => 'string',
     ];
 

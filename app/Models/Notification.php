@@ -2,12 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class Notification extends Model
+class Notification extends \Illuminate\Database\Eloquent\Model
 {
-    use HasFactory;
+    use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
         'event_id',

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Comment;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class EventController extends Controller
 {
@@ -15,7 +16,7 @@ class EventController extends Controller
 
     public function __construct()
     {
-        $this->user = auth()->user();
+        $this->user = JWTAuth::user(JWTAuth::getToken());
         $this->admin = $this->user->role == 'admin';
     }
 

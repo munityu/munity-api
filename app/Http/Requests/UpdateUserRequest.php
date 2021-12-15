@@ -17,7 +17,7 @@ class UpdateUserRequest extends FormRequest
             'name' => 'string|unique:users,name|max:10',
             'email' => 'email|unique:users,email|max:64',
             'password' => 'min:8|confirmed',
-            'role' => 'email|unique:users,email|max:64',
+            'role' => 'string|in:user,company,admin',
         ];
     }
 }

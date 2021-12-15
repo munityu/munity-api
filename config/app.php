@@ -39,7 +39,7 @@ return [
         App\Providers\AuthServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-
+        Grimzy\LaravelMysqlSpatial\SpatialServiceProvider::class,
     ],
     'aliases' => [
         'App' => Illuminate\Support\Facades\App::class,
