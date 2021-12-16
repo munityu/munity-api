@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Http\Requests\UploadAvatarRequest;
+use App\Http\Requests\UploadImageRequest;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 
@@ -110,19 +110,19 @@ class UserController extends Controller
         ]), JWTAuth::factory()->getTTL()));
     }
 
-    public function uploadAvatar(UploadAvatarRequest $request)
+    public function uploadAvatar(UploadImageRequest $request)
     {
         if ($request->file('image')) {
             $user = User::find($this->user->id);
-            $uimage = substr($user->image, 46);
+            $uimage = substr($user->image, 53);
 
-            if (\Illuminate\Support\Facades\Storage::disk('s3')->exists('weevely/' . $uimage) && !str_contains($uimage, 'weevely_H265P'))
-                \Illuminate\Support\Facades\Storage::disk('s3')->delete('weevely/' . $uimage);
+            if (\Illuminate\Support\Facades\Storage::disk('s3')->exists('munity/' . $uimage) && !str_contains($uimage, 'munity_H265P'))
+                \Illuminate\Support\Facades\Storage::disk('s3')->delete('munity/' . $uimage);
 
             $user->update([
-                'image' => $image = "https://d3djy7pad2souj.cloudfront.net/weevely/" .
-                    explode('/', $request->file('image')->storeAs('weevely', $user->id .
-                        $request->file('image')->getClientOriginalName(), 's3'))[1]
+                'image' => $image = "https://d3djy7pad2souj.cloudfront.net/munity/avatars/" .
+                    explode('/', $request->file('image')->storeAs('munity/avatars', $user->id .
+                        $request->file('image')->getClientOriginalName(), 's3'))[2]
             ]);
 
             return response([

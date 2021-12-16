@@ -13,7 +13,7 @@ class AuthController extends Controller
             $user = User::create([
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
-                'image' => 'https://d3djy7pad2souj.cloudfront.net/weevely/avatar' . rand(1, 5) . '_weevely_H265P.png',
+                'image' => 'https://d3djy7pad2souj.cloudfront.net/munity/avatar' . rand(1, 5) . '_munity_H265P.png',
                 'password' => \Illuminate\Support\Facades\Hash::make($request->input('password')),
             ]);
         } catch (\Exception $e) {
