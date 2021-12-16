@@ -14,7 +14,7 @@ class CommentController extends Controller
     public function __construct()
     {
         $this->user = JWTAuth::user(JWTAuth::getToken());
-        $this->admin = $this->user->role == 'admin';
+        $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 
     public function show(int $id)

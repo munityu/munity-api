@@ -15,7 +15,9 @@ class CreateEventsTable extends \Illuminate\Database\Migrations\Migration
             $table->enum('theme', ['Business', 'Politics', 'Psychology', 'Education', 'Entertainment', "Music", "Art"]);
             $table->unsignedFloat('price')->nullable();
             $table->point('location');
+            $table->string('address', 1024);
             $table->dateTime('date');
+            $table->dateTime('pub_date')->useCurrent();
             $table->boolean('nv_notifications')->default(false);
             $table->boolean('public_visitors')->default(false);
             $table->string('promocode', 16)->nullable();

@@ -16,7 +16,7 @@ class UserController extends Controller
     public function __construct()
     {
         $this->user = JWTAuth::user(JWTAuth::getToken());
-        $this->admin = $this->user->role == 'admin';
+        $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 
     public function index()
@@ -26,7 +26,10 @@ class UserController extends Controller
 
     public function store(RegisterRequest $request)
     {
-        return User::create($request->all());
+        $data = $request->all();
+        if ($location = $data['location'])
+            $data['location'] = User::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
+        return User::create($data);
     }
 
     public function show(int|string $id)
@@ -45,12 +48,11 @@ class UserController extends Controller
 
         if (!$user->location)
             unset($user->location);
-        else {
+        else
             $user->location = [
                 $user->location->getLat(),
                 $user->location->getLng()
             ];
-        }
         return $user;
     }
 
@@ -63,9 +65,8 @@ class UserController extends Controller
             return response(...$this->error_403);
 
         $data = $request->all();
-        if ($data['location']) {
-            $data['location'] = new \Grimzy\LaravelMysqlSpatial\Types\Point($data['location'][0], $data['location'][1]);
-        }
+        if ($location = $data['location'])
+            $data['location'] = User::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
 
         return $user->update($data);
     }
@@ -86,7 +87,10 @@ class UserController extends Controller
         if (!$user = User::find($this->user->id))
             return response(...$this->error404);
 
-        $user->update($request->all());
+        $data = $request->all();
+        if ($location = $data['location'])
+            $data['location'] = User::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
+        $user->update($data);
         return response([
             "message" => "Successfully updated.",
             'cookie' => json_encode([
@@ -139,5 +143,14 @@ class UserController extends Controller
                 'token' => $request->header('Authorization')
             ]), JWTAuth::factory()->getTTL()));
         }
+    }
+
+    public function getEvents(int $id)
+    {
+        if (!$user = User::find($id))
+            return response(...$this->error404);
+        if (!$this->admin && $this->user->id != $user->id)
+            return response(...$this->error403);
+        return $user->events;
     }
 }

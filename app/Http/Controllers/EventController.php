@@ -3,26 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use App\Models\User;
 use App\Models\Comment;
 use App\Models\Notification;
+use App\Filters\EventFilters;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Carbon\Carbon;
 
 class EventController extends Controller
 {
     private $error_404 = [['message' => 'Event not found'], 404];
     private $error_403 = [['message' => 'Permission denied'], 403];
+    private $min_set = ['title', 'description', 'format', 'theme', 'date', 'price', 'address'];
 
     public function __construct()
     {
         $this->user = JWTAuth::user(JWTAuth::getToken());
-        $this->admin = $this->user->role == 'admin';
+        $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return Event::all();
+        $filters = new EventFilters($request);
+        $query =  $filters->apply(Event::query())->where('pub_date', '<=', Carbon::now());
+        if ($filters->page_num === null)
+            $result = $query->get($this->min_set);
+        else
+            $result = $query->paginate($filters->per_page_num, $this->min_set, 'page', $filters->page_num);
+        return $result;
     }
 
     public function store(Request $request)
@@ -30,8 +38,8 @@ class EventController extends Controller
         if ($this->user->role == 'user')
             return response(...$this->error_403);
         $data = $request->all();
-        if (isset($data['location']) && $location = $data['location'])
-            $data['location'] = User::raw("ST_GeomFromText('POINT($location)')");
+        if ($location = $data['location'])
+            $data['location'] = Event::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
         $event = Event::create($data);
         $event->members()->attach($this->user->id, ['organizer' => true]);
         return $event;
@@ -43,8 +51,14 @@ class EventController extends Controller
             return response(...$this->error_404);
         if (!$this->admin && !$event->isMember($this->user->id))
             return response(...$this->error_403);
-        // FIXME Array to string conversion exception
-        $event->location = unpack('x/x/x/x/corder/Ltype/dlat/dlon', $event->location);
+
+        if (!$event->location)
+            unset($event->location);
+        else
+            $event->location = [
+                $event->location->getLat(),
+                $event->location->getLng()
+            ];
         return $event;
     }
 
@@ -55,8 +69,8 @@ class EventController extends Controller
         if (!$this->admin && $event->organizer->first()->id != $this->user->id)
             return response(...$this->error_403);
         $data = $request->all();
-        if (isset($data['location']) && $location = $data['location'])
-            $data['location'] = User::raw("ST_GeomFromText('POINT($location)')");
+        if ($location = $data['location'])
+            $data['location'] = Event::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
         return $event->update($data);
     }
 
@@ -76,6 +90,11 @@ class EventController extends Controller
         if (!$event->isMember($this->user->id))
             return response(...$this->error_403);
         $event->members()->attach($this->user->id);
+        if ($event->nv_notifications)
+            Notification::create([
+                'event_id' => $event->id,
+                'content' => 'New member! Greetings to ' . $this->user->name
+            ]);
         return $event;
     }
 
@@ -102,6 +121,15 @@ class EventController extends Controller
         $data['event_id'] = $id;
         $notify = Notification::create($data);
         return $notify;
+    }
+
+    public function getMembers(int $id)
+    {
+        if (!$event = Event::find($id))
+            return response(...$this->error_404);
+        if (!$this->admin && !$event->isMember($this->user->id) && !$event->public_visitors)
+            return response(...$this->error_403);
+        return $event->members;
     }
 
     public function getComments(int $id)
