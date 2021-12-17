@@ -5,6 +5,7 @@ namespace App\Models;
 class Event extends \Illuminate\Database\Eloquent\Model
 {
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
+    use \Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
     protected $fillable = [
         'title',
@@ -23,6 +24,10 @@ class Event extends \Illuminate\Database\Eloquent\Model
         'page',
     ];
 
+    protected $spatialFields = [
+        'location',
+    ];
+
     protected $casts = [
         'title' => 'string',
         'description' => 'string',
@@ -32,7 +37,6 @@ class Event extends \Illuminate\Database\Eloquent\Model
         'date' => 'datetime',
         'pub_date' => 'datetime',
         'price' => 'float',
-        'location' => 'string',
         'address' => 'string',
         'nv_notifications' => 'bool',
         'public_visitors' => 'bool',

@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
-
 class User extends \Illuminate\Foundation\Auth\User implements \Tymon\JWTAuth\Contracts\JWTSubject
 {
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
-    use SpatialTrait;
+    use \Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
     protected $fillable = [
         'name',

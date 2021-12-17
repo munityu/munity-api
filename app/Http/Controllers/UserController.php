@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\UpdateUserRequest;
-use App\Http\Requests\UploadImageRequest;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 
@@ -24,7 +21,7 @@ class UserController extends Controller
         return User::all();
     }
 
-    public function store(RegisterRequest $request)
+    public function store(\App\Http\Requests\RegisterRequest $request)
     {
         $data = $request->all();
         if ($location = $data['location'])
@@ -34,7 +31,7 @@ class UserController extends Controller
 
     public function show(int|string $id)
     {
-        $user = is_numeric($id) ? User::find($id) : User::where('name', $id)->first();
+        $user = is_numeric($id) ? User::with(['events', 'organizer'])->find($id) : User::where('name', $id)->with(['events', 'organizer'])->first();
         if (!$user)
             return response(...$this->error404);
 
@@ -56,7 +53,7 @@ class UserController extends Controller
         return $user;
     }
 
-    public function update(UpdateUserRequest $request, int $id)
+    public function update(\App\Http\Requests\UpdateUserRequest $request, int $id)
     {
         if (!$user = User::find($id))
             return response(...$this->error404);
@@ -82,15 +79,17 @@ class UserController extends Controller
         return $user->delete($id);
     }
 
-    public function updateMe(UpdateUserRequest $request)
+    public function updateMe(\App\Http\Requests\UpdateUserRequest $request)
     {
         if (!$user = User::find($this->user->id))
             return response(...$this->error404);
 
         $data = $request->all();
-        if ($location = $data['location'])
-            $data['location'] = User::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
+        if ($request->input('location'))
+            if ($location = $data['location'])
+                $data['location'] = User::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
         $user->update($data);
+
         return response([
             "message" => "Successfully updated.",
             'cookie' => json_encode([
@@ -98,6 +97,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'image' => $user->image,
+                'role' => $user->role,
                 'token' => $request->header('Authorization'),
                 'ttl' => JWTAuth::factory()->getTTL() * 60
             ])
@@ -106,11 +106,12 @@ class UserController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'image' => $user->image,
+            'role' => $user->role,
             'token' => $request->header('Authorization')
         ]), JWTAuth::factory()->getTTL()));
     }
 
-    public function uploadAvatar(UploadImageRequest $request)
+    public function uploadAvatar(\App\Http\Requests\UploadImageRequest $request)
     {
         if ($request->file('image')) {
             $user = User::find($this->user->id);
@@ -132,6 +133,7 @@ class UserController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'image' => $image,
+                    'role' => $user->role,
                     'token' => $request->header('Authorization'),
                     'ttl' => JWTAuth::factory()->getTTL() * 60
                 ])
@@ -140,6 +142,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'image' => $image,
+                'role' => $user->role,
                 'token' => $request->header('Authorization')
             ]), JWTAuth::factory()->getTTL()));
         }

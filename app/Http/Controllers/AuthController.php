@@ -3,17 +3,16 @@
 namespace App\Http\Controllers;
 
 use Tymon\JWTAuth\Facades\JWTAuth;
-use App\Models\User;
 
 class AuthController extends Controller
 {
     public function register(\App\Http\Requests\RegisterRequest $request)
     {
         try {
-            $user = User::create([
+            $user = \App\Models\User::create([
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
-                'image' => 'https://d3djy7pad2souj.cloudfront.net/munity/avatar' . rand(1, 5) . '_munity_H265P.png',
+                'image' => 'https://d3djy7pad2souj.cloudfront.net/munity/avatars/avatar' . rand(1, 5) . '_munity_H265P.png',
                 'password' => \Illuminate\Support\Facades\Hash::make($request->input('password')),
             ]);
         } catch (\Exception $e) {
@@ -29,6 +28,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'image' => $user->image,
+                'role' => $user->role,
                 'token' => "Bearer " . JWTAuth::attempt($request->only(['name', 'password'])),
                 'ttl' => JWTAuth::factory()->getTTL() * 60
             ])
@@ -48,6 +48,7 @@ class AuthController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'image' => $user->image,
+                        'role' => $user->role,
                         'token' => "Bearer " . $token,
                         'ttl' => JWTAuth::factory()->getTTL() * 60
                     ])
@@ -56,6 +57,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'image' => $user->image,
+                    'role' => $user->role,
                     'token' => "Bearer " . $token
                 ]), JWTAuth::factory()->getTTL()));
             }

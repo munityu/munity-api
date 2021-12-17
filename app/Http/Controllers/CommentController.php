@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
-use Illuminate\Http\Request;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CommentController extends Controller
 {
@@ -13,7 +11,7 @@ class CommentController extends Controller
 
     public function __construct()
     {
-        $this->user = JWTAuth::user(JWTAuth::getToken());
+        $this->user = \Tymon\JWTAuth\Facades\JWTAuth::user(\Tymon\JWTAuth\Facades\JWTAuth::getToken());
         $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 
@@ -24,7 +22,7 @@ class CommentController extends Controller
         return $comment;
     }
 
-    public function update(Request $request, int $id)
+    public function update(\Illuminate\Http\Request $request, int $id)
     {
         if (!$comment = Comment::find($id))
             return response(...$this->error_404);
