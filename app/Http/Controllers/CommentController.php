@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CommentController extends Controller
 {
@@ -11,7 +12,7 @@ class CommentController extends Controller
 
     public function __construct()
     {
-        $this->user = \Tymon\JWTAuth\Facades\JWTAuth::user(\Tymon\JWTAuth\Facades\JWTAuth::getToken());
+        $this->user = JWTAuth::user(JWTAuth::getToken());
         $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller
 {
@@ -151,13 +151,19 @@ class UserController extends Controller
 
     public function getEvents()
     {
+        return Event::whereHas('members', function ($q) {
+            $q->where('id', $this->user->id)->where('event_user.organizer', $this->user->role !== 'user');
+        })->with(["comments", "members"])->get();
+    }
 
-        return ($this->user->role === 'user')
-            ? Event::whereHas('members', function ($q) {
-                $q->where('id', $this->user->id)->where('event_user.organizer', false);
-            })->with(["comments", "members"])->get()
-            : Event::whereHas('members', function ($q) {
-                $q->where('id', $this->user->id)->where('event_user.organizer', true);
-            })->with(["comments", "members"])->get();
+    public function getNotifications()
+    {
+        $events = [];
+        foreach ($this->getEvents() as $event)
+            array_push($events, ...$event->notifications);
+        usort($events, function ($e1, $e2) {
+            return $e1['id'] < $e2['id'];
+        });
+        return $events;
     }
 }

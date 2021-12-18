@@ -22,6 +22,7 @@ Route::group(['prefix' => 'auth'], function () {
 Route::group(['prefix' => 'users', 'middleware' => 'auth'], function () {
     Route::get('/me', [UserController::class, 'me']);
     Route::get('/me/events', [UserController::class, 'getEvents']);
+    Route::get('/me/notifications', [UserController::class, 'getNotifications']);
     Route::post('/me/avatar', [UserController::class, 'uploadAvatar']);
     Route::patch('/me', [UserController::class, 'updateMe']);
 });

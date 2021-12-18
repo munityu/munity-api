@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class EventController extends Controller
 {
@@ -13,7 +14,7 @@ class EventController extends Controller
 
     public function __construct()
     {
-        $this->user = \Tymon\JWTAuth\Facades\JWTAuth::user(\Tymon\JWTAuth\Facades\JWTAuth::getToken());
+        $this->user = JWTAuth::user(JWTAuth::getToken());
         $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 
@@ -33,7 +34,7 @@ class EventController extends Controller
         $data = $request->all();
         if ($location = $data['location'])
             $data['location'] = Event::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
-        $data['date'] = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $data['date'])->addHour();
+        $data['date'] = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $data['date']);
 
         $event = Event::create($data);
         $event->members()->attach($this->user->id, ['organizer' => true]);
@@ -99,7 +100,7 @@ class EventController extends Controller
     {
         if (!$event = Event::find($id))
             return response(...$this->error_404);
-        if (!$event->isMember($this->user->id))
+        if ($event->isMember($this->user->id))
             return response(...$this->error_403);
         $event->members()->attach($this->user->id);
         if ($event->nv_notifications)
