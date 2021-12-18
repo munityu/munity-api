@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Models\User;
 
@@ -31,7 +32,7 @@ class UserController extends Controller
 
     public function show(int|string $id)
     {
-        $user = is_numeric($id) ? User::with(['events', 'organizer'])->find($id) : User::where('name', $id)->with(['events', 'organizer'])->first();
+        $user = is_numeric($id) ? User::with('organizer')->find($id) : User::where('name', $id)->with('organizer')->first();
         if (!$user)
             return response(...$this->error404);
 
@@ -148,12 +149,15 @@ class UserController extends Controller
         }
     }
 
-    public function getEvents(int $id)
+    public function getEvents()
     {
-        if (!$user = User::find($id))
-            return response(...$this->error404);
-        if (!$this->admin && $this->user->id != $user->id)
-            return response(...$this->error403);
-        return $user->events;
+
+        return ($this->user->role === 'user')
+            ? Event::whereHas('members', function ($q) {
+                $q->where('id', $this->user->id)->where('event_user.organizer', false);
+            })->with(["comments", "members"])->get()
+            : Event::whereHas('members', function ($q) {
+                $q->where('id', $this->user->id)->where('event_user.organizer', true);
+            })->with(["comments", "members"])->get();
     }
 }

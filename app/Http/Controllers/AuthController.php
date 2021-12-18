@@ -14,6 +14,7 @@ class AuthController extends Controller
                 'email' => $request->input('email'),
                 'image' => 'https://d3djy7pad2souj.cloudfront.net/munity/avatars/avatar' . rand(1, 5) . '_munity_H265P.png',
                 'password' => \Illuminate\Support\Facades\Hash::make($request->input('password')),
+                'role' => 'user'
             ]);
         } catch (\Exception $e) {
             return response([

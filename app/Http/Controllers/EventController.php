@@ -20,7 +20,7 @@ class EventController extends Controller
     public function index(Request $request)
     {
         $filters = new \App\Filters\EventFilters($request);
-        $query =  $filters->apply(Event::query()->with(['members', 'comments', 'organizer']))->where('pub_date', '<=', \Carbon\Carbon::now()->addHour());
+        $query =  $filters->apply(Event::query())->with(['members', 'comments', 'organizer'])->where('pub_date', '<=', \Carbon\Carbon::now()->addHour())->where('date', '>=', \Carbon\Carbon::now()->addHour());
         if ($filters->page_num === null)
             $result = $query->get();
         else
@@ -44,14 +44,9 @@ class EventController extends Controller
     {
         if (!$event = Event::with(['comments', 'members', 'organizer'])->find($id))
             return response(...$this->error_404);
+        foreach ($event->comments as $comment)
+            $comment->user = \App\Models\User::find($comment->user_id);
 
-        if (!$event->location)
-            unset($event->location);
-        else
-            $event->location = [
-                $event->location->getLat(),
-                $event->location->getLng()
-            ];
         return $event;
     }
 
