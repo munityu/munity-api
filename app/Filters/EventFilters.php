@@ -5,7 +5,7 @@ namespace App\Filters;
 class EventFilters extends QueryFilter
 {
     // sorting
-    public function ordDate(string $order = 'asc')
+    public function order(string $order = 'asc')
     {
         return $this->builder->orderBy('date', $order);
     }
@@ -19,11 +19,11 @@ class EventFilters extends QueryFilter
     {
         return $this->builder->where('theme', '=', $theme);
     }
-    public function dateFrom($date)
+    public function fromDate($date)
     {
         return $this->builder->where('date', '>=', $date);
     }
-    public function dateTo($date)
+    public function toDate($date)
     {
         return $this->builder->where('date', '<=', $date);
     }

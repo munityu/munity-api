@@ -39,21 +39,6 @@ class UserController extends Controller
         return $user;
     }
 
-    public function me()
-    {
-        if (!$user = User::find($this->user->id))
-            return response(...$this->error404);
-
-        if (!$user->location)
-            unset($user->location);
-        else
-            $user->location = [
-                $user->location->getLat(),
-                $user->location->getLng()
-            ];
-        return $user;
-    }
-
     public function update(\App\Http\Requests\UpdateUserRequest $request, int $id)
     {
         if (!$user = User::find($id))
@@ -78,6 +63,21 @@ class UserController extends Controller
             return response(...$this->error403);
 
         return $user->delete($id);
+    }
+
+    public function me()
+    {
+        if (!$user = User::find($this->user->id))
+            return response(...$this->error404);
+
+        if (!$user->location)
+            unset($user->location);
+        else
+            $user->location = [
+                $user->location->getLat(),
+                $user->location->getLng()
+            ];
+        return $user;
     }
 
     public function updateMe(\App\Http\Requests\UpdateUserRequest $request)
@@ -153,17 +153,19 @@ class UserController extends Controller
     {
         return Event::whereHas('members', function ($q) {
             $q->where('id', $this->user->id)->where('event_user.organizer', $this->user->role !== 'user');
-        })->with(["comments", "members"])->get();
+        })->with(["comments", "members", "notifications"])->get();
     }
 
     public function getNotifications()
     {
-        $events = [];
+        $notifications = [];
         foreach ($this->getEvents() as $event)
-            array_push($events, ...$event->notifications);
-        usort($events, function ($e1, $e2) {
+            array_push($notifications, ...$event->notifications);
+
+        usort($notifications, function ($e1, $e2) {
             return $e1['id'] < $e2['id'];
         });
-        return $events;
+
+        return $notifications;
     }
 }

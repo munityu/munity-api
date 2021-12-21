@@ -4,17 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class EventController extends Controller
 {
     private $error_404 = [['message' => 'Event not found'], 404];
     private $error_403 = [['message' => 'Permission denied'], 403];
-    private $error_400 = [['message' => 'Image file required'], 400];
 
     public function __construct()
     {
-        $this->user = JWTAuth::user(JWTAuth::getToken());
+        $this->user = \Tymon\JWTAuth\Facades\JWTAuth::user(\Tymon\JWTAuth\Facades\JWTAuth::getToken());
         $this->admin = $this->user ? $this->user->role == 'admin' : false;
     }
 
@@ -36,9 +34,21 @@ class EventController extends Controller
             $data['location'] = Event::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
         $data['date'] = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $data['date']);
 
-        $event = Event::create($data);
-        $event->members()->attach($this->user->id, ['organizer' => true]);
-        return $event;
+        $newEvent = Event::create($data);
+        $newEvent->members()->attach($this->user->id, ['organizer' => true]);
+        if ($request->file('image')) {
+            $event = Event::find($newEvent->id);
+
+            $posterUrl = "https://d3djy7pad2souj.cloudfront.net/munity/posters/" .
+                explode('/', $request->file('image')->storeAs('munity/posters', $event->id .
+                    $request->file('image')->getClientOriginalName(), 's3'))[2];
+
+            $event->update([
+                'poster' => $posterUrl
+            ]);
+        }
+
+        return $newEvent;
     }
 
     public function show(int $id)
@@ -57,34 +67,23 @@ class EventController extends Controller
             return response(...$this->error_404);
         if (!$this->admin && $event->organizer->first()->id != $this->user->id)
             return response(...$this->error_403);
+
         $data = $request->all();
         if ($location = $data['location'])
             $data['location'] = Event::raw("ST_GeomFromText('POINT($location[0] $location[1])')");
+        $data['date'] = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $data['date']);
+
+        if ($request->file('image')) {
+            $pimage = $event->poster ? substr($event->poster, 53) : null;
+            if ($pimage && \Illuminate\Support\Facades\Storage::disk('s3')->exists('munity/posters/' . $pimage))
+                \Illuminate\Support\Facades\Storage::disk('s3')->delete('munity/posters/' . $pimage);
+
+            $data['poster'] = "https://d3djy7pad2souj.cloudfront.net/munity/posters/" .
+                explode('/', $request->file('image')->storeAs('munity/posters', $id .
+                    $request->file('image')->getClientOriginalName(), 's3'))[2];
+        }
+
         return $event->update($data);
-    }
-
-    public function uploadPoster(\App\Http\Requests\UploadImageRequest $request, int $id)
-    {
-        if (!$request->file('image'))
-            return response(...$this->error_400);
-        if (!$event = Event::find($id))
-            return response(...$this->error_404);
-        if (!$this->admin && $event->organizer->first()->id != $this->user->id)
-            return response(...$this->error_403);
-        $pimage = $event->poster ? substr($event->poster, 53) : null;
-
-        if ($pimage && \Illuminate\Support\Facades\Storage::disk('s3')->exists('munity/posters/' . $pimage))
-            \Illuminate\Support\Facades\Storage::disk('s3')->delete('munity/posters/' . $pimage);
-
-        $posterUrl = "https://d3djy7pad2souj.cloudfront.net/munity/posters/" .
-            explode('/', $request->file('image')->storeAs('munity/posters', $event->id .
-                $request->file('image')->getClientOriginalName(), 's3'))[2];
-
-        $event->update([
-            'poster' => $posterUrl
-        ]);
-
-        return response(['message' => 'Poster successfully uploaded!', 'poster' => $posterUrl]);
     }
 
     public function destroy(int $id)
@@ -93,7 +92,10 @@ class EventController extends Controller
             return response(...$this->error_404);
         if (!$this->admin && $event->organizer->first()->id != $this->user->id)
             return response(...$this->error_403);
-        return $event->delete($id);
+
+        $event->members()->detach();
+        \Illuminate\Support\Facades\Storage::disk('s3')->delete('munity/posters/' . substr($event->poster, 53));
+        return $event->delete();
     }
 
     public function subscribe(int $id)
@@ -102,6 +104,7 @@ class EventController extends Controller
             return response(...$this->error_404);
         if ($event->isMember($this->user->id))
             return response(...$this->error_403);
+
         $event->members()->attach($this->user->id);
         if ($event->nv_notifications)
             \App\Models\Notification::create([

@@ -33,6 +33,6 @@ width: 100%;">
     align-items: center;
     padding: 10px 0;
     background-color:#f5f9ff;">
-        <p style="font-family: Poppins, Arial, Helvetica; text-align:center;">This message was sent automatically. You don't need to reply to it.<br>Weevely<br>Copyright © 2021 Paul Litovka. All rights reserved.</p>
+        <p style="font-family: Poppins, Arial, Helvetica; text-align:center;">This message was sent automatically. You don't need to reply to it.<br>Munity<br>Copyright © 2021 Paul Litovka. All rights reserved.</p>
     </section>
 </main>

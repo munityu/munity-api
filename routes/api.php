@@ -31,7 +31,6 @@ Route::apiResource('users', UserController::class);
 Route::group(['prefix' => 'events'], function () {
     Route::get('/{id}/comments', [EventController::class, 'getComments']);
     Route::get('/{id}/notifications', [EventController::class, 'getNotifications']);
-    Route::post('/{id}/poster', [EventController::class, 'uploadPoster']);
     Route::post('/{id}/subscribe', [EventController::class, 'subscribe']);
     Route::post('/{id}/comments', [EventController::class, 'createComment']);
     Route::post('/{id}/notifications', [EventController::class, 'createNotification']);
